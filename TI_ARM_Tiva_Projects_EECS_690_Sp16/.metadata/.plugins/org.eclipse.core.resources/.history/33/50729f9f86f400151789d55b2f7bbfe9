@@ -1,0 +1,59 @@
+/*--Task_ReportTime.c
+ *
+ *  Author:			Gary J. Minden
+ *	Organization:	KU/EECS/EECS 388
+ *  Date:			February 23, 2016
+ *
+ *  Description:	Reports SysTickCount via printf.
+ *
+ */
+
+
+#include	<stddef.h>
+#include	<stdbool.h>
+#include	<stdint.h>
+#include	<stdarg.h>
+
+
+#include	"FreeRTOS.h"
+#include	"task.h"
+
+#include	"stdio.h"
+
+
+extern volatile xQueueHandle PIDQueue;
+
+extern void Task_PID( void *pvParameters ) {
+
+	float setpoint = 85.0;
+
+	//
+	//	Enter task loop
+	//
+	xPortSysTickCount = 0;
+	while ( 1) {
+        /// 1. Calculate difference of setpoint and actual value (P):
+
+        float diff=actual-setpoint;
+
+        /// 2. Sum up for integral part (I):
+        sum+=diff;
+
+        /// set sum to zero if controller is disabled:
+        if (0==enabled) sum=0;
+
+        /// Check the sum for limits to prevent numerical underflow?
+
+        /// 3. Calc change of diff for derivative part (D):
+        deltadiff=diff-olddiff;
+        olddiff=diff;
+
+        /// 4. Now Combine P,I and D parts:
+        output=kp*diff+ki*sum+kd*deltadiff;
+
+        /// 5. Decide to turn on heat or not, set flag
+
+        vTaskDelay(params->delay);
+		vTaskDelay(configTICK_RATE_HZ / 20 );
+	}
+}

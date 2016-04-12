@@ -1,0 +1,72 @@
+/*
+ * Task_ReportData.c
+ *
+ *  Created on: Mar 27, 2016
+ *      Author: Aaron Cowdrey
+ */
+
+
+
+#include	<stddef.h>
+#include	<stdbool.h>
+#include	<stdint.h>
+#include	<stdarg.h>
+
+
+#include	"FreeRTOS.h"
+#include	"task.h"
+#include	"UART.h"
+#include	"queue.h"
+
+#include	"stdio.h"
+
+typedef struct _dataPacket {
+	char name[20];
+	uint32_t id;
+	uint32_t time;
+    float val1;
+} dataPacket;
+
+xQueueHandle dataQueue;
+
+extern void Task_ReportData( void *pvParameters ) {
+
+	dataQueue = xQueueCreate(20, sizeof(dataPacket));// initialize queue creation
+	UART_Init();              // initialize UART
+
+	//
+	//	Enter task loop
+	//
+	int i = 0;
+	vTaskDelay(configTICK_RATE_HZ);
+	while ( 1 ) {
+		i++;
+		dataPacket recievedPacket;
+		while(xQueueReceiveFromISR (dataQueue, &recievedPacket, 100))
+		{
+			printf("%-20s", recievedPacket.name);
+
+			char buf0[256];
+			sprintf(buf0, "%d", recievedPacket.id);
+			printf("%-10s", buf0);
+
+			char buf1[256];
+			sprintf(buf1, "%d", recievedPacket.time);
+			printf("%-10s",buf1);
+
+			char buf2[256];
+			sprintf(buf2, "%.2f", recievedPacket.val1);
+			printf("%-10s",buf2);
+
+			printf( "\n");
+		}
+
+		char buf[24];
+		sprintf(buf1, "%d", i);
+		printf("skip ",buf1);
+		printf("%s \n");
+		vTaskDelay(configTICK_RATE_HZ);
+	}
+}
+
+

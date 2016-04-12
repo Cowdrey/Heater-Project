@@ -1,0 +1,80 @@
+/*
+ * Task_ReportData.c
+ *
+ *  Created on: Mar 27, 2016
+ *      Author: Aaron Cowdrey
+ */
+
+
+
+#include	<stddef.h>
+#include	<stdbool.h>
+#include	<stdint.h>
+#include	<stdarg.h>
+
+
+#include	"FreeRTOS.h"
+#include	"task.h"
+#include	"UART.h"
+#include	"queue.h"
+#include	"semphr.h"
+
+#include	"stdio.h"
+
+typedef struct _dataPacket {
+	char name[20];
+	uint32_t id;
+	uint32_t time;
+    float val1;
+} dataPacket;
+
+xQueueHandle dataQueue;
+SemaphoreHandle_t xSemaphore;
+
+extern void Task_ReportData( void *pvParameters ) {
+
+	dataQueue = xQueueCreate(20, sizeof(dataPacket));// initialize queue creation
+	UART_Init();              // initialize UART
+
+	// xSemaphoreCreateMutex().  The created mutex is returned.
+	xSemaphore = xSemaphoreCreateMutex();
+
+	//
+	//	Enter task loop
+	//
+
+	vTaskDelay(configTICK_RATE_HZ);
+	while ( 1 ) {
+		if( xSemaphoreTake( xSemaphore, ( TickType_t ) 100 ) == pdTRUE )
+		{
+			dataPacket recievedPacket;
+			while(xQueueReceiveFromISR (dataQueue, &recievedPacket, NULL))
+			{
+				printf("%-20s", recievedPacket.name);
+
+				char buf0[256];
+				sprintf(buf0, "%d", recievedPacket.id);
+				printf("%-10s", buf0);
+
+				char buf1[256];
+				sprintf(buf1, "%d", recievedPacket.time);
+				printf("%-10s",buf1);
+
+				char buf2[256];
+				sprintf(buf2, "%.2f", recievedPacket.val1);
+				printf("%-10s",buf2);
+
+				printf( "\n");
+			}
+            xSemaphoreGive( xSemaphore );
+		}
+		else
+		{
+			printf("skip ");
+		}
+
+		vTaskDelay(configTICK_RATE_HZ);
+	}
+}
+
+
