@@ -32,18 +32,20 @@ typedef struct _dataPacket {
 
 extern volatile uint32_t xPortSysTickCount;
 extern volatile xQueueHandle dataQueue;
+extern volatile xQueueHandle HeaterOnQueue;
 extern volatile SemaphoreHandle_t xSemaphoreTempData;
 extern volatile SemaphoreHandle_t xSemaphoreData;
+extern volatile SemaphoreHandle_t xSemaphoreHeaterOn;
 xQueueHandle PIDQueue;
 
 extern void Task_PID( void *pvParameters ) {
 
-	float setpoint = 75.0;
+	float setpoint = 90.0;
 	float sum = 0.0;
 	float olddiff = 0.0;
 	float kp = 0.2;
-	float kd = 0.0;
-	float ki = 0.0;
+	float kd = 139.0;
+	float ki = 35.0;
 	PIDQueue = xQueueCreate(20, sizeof(dataPacket));// initialize queue creation
 
 	//
@@ -83,6 +85,12 @@ extern void Task_PID( void *pvParameters ) {
 				{
 					xQueueSend(dataQueue, &data1, NULL);
 					xSemaphoreGive( xSemaphoreData );
+
+				}
+				if( xSemaphoreTake( xSemaphoreHeaterOn, ( TickType_t ) 100 ) == pdTRUE )
+				{
+					xQueueSend(HeaterOnQueue, &data1, NULL);
+					xSemaphoreGive( xSemaphoreHeaterOn );
 
 				}
 
