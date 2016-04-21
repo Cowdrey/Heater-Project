@@ -50,15 +50,17 @@ extern void Task_ReportData( void *pvParameters ) {
 			{
 				while(xQueueReceive(dataQueue, &recievedPacket, 0))
 				{
-					printf("%-20s", recievedPacket.name);
+					if((recievedPacket.id != 200) && (recievedPacket.id != 300)) //only see temperature
+						continue;
+					printf("%-20s,", recievedPacket.name);
 
 					char buf0[256];
 					sprintf(buf0, "%d", recievedPacket.id);
-					printf("%-10s", buf0);
+					printf("%-10s,", buf0);
 
 					char buf1[256];
 					sprintf(buf1, "%d", recievedPacket.time);
-					printf("%-10s",buf1);
+					printf("%-10s,",buf1);
 
 					char buf2[256];
 					sprintf(buf2, "%.2f", recievedPacket.val1);

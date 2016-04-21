@@ -57,7 +57,7 @@ int main( void ) {
 	//
 	//	Create task to turn-on the HeaterOn_H
 	//
-	//xTaskCreate( Task_HeaterOn, "HeaterOn", 512, NULL, 1, NULL );
+	xTaskCreate( Task_HeaterOn, "HeaterOn", 1024, NULL, 1, NULL );
 
 //	puts  ("Hello, world!" );
 

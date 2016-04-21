@@ -40,12 +40,12 @@ xQueueHandle PIDQueue;
 
 extern void Task_PID( void *pvParameters ) {
 
-	float setpoint = 90.0;
+	float setpoint = 85.0;
 	float sum = 0.0;
 	float olddiff = 0.0;
 	float kp = 0.2;
-	float kd = 139.0;
-	float ki = 35.0;
+	float kd = 0.01;
+	float ki = 0.0;
 	PIDQueue = xQueueCreate(20, sizeof(dataPacket));// initialize queue creation
 
 	//
@@ -77,7 +77,7 @@ extern void Task_PID( void *pvParameters ) {
 				olddiff=diff;
 
 				/// 4. Now Combine P,I and D parts:
-				float output=kp*diff+ki*sum+kd*deltadiff;
+				float output=kp*diff+ki*sum+kd*deltadiff  + .5;
 
 				/// 5. Decide to turn on heat or not, set flag
 				dataPacket data1 = {"PID value", 300, xPortSysTickCount,output};

@@ -78,8 +78,6 @@ extern void Task_HeaterOn( void *pvParameters ) {
 
 	vTaskDelay(configTICK_RATE_HZ);
 
-	int isOn = 0;
-
 	while ( 1 ) {
 			dataPacket recievedPacket;
 			if(xSemaphoreTake( xSemaphoreHeaterOn, ( TickType_t ) 100 ) == pdTRUE )
@@ -87,50 +85,35 @@ extern void Task_HeaterOn( void *pvParameters ) {
 				while(xQueueReceive(HeaterOnQueue, &recievedPacket, 0))
 				{
 					float value = recievedPacket.val1;
-					//value = (value > 0.20?0.20:(value < -0.20? -0.20:value)); //limits on PID value
+					value = (value > 1?1:(value < 0? 0:value)); //limits on PID value
 
 
 					dataPacket data = {"HeaterStatus", 500, xPortSysTickCount, value};
-			        //
-			        // Set HeaterOn_H for value.
-			        //
-					if(value < -0.20)
+
+					if((1.0 - value) > 0.01)
 					{
 						GPIOPinWrite( GPIO_PORTG_BASE, GPIO_PIN_0, 0x01 );
 						GPIOPinWrite( GPIO_PORTN_BASE, GPIO_PIN_0, 0x01 );
-						vTaskDelay((1000 * configTICK_RATE_HZ)/ TimeBase_mS );
-						if(isOn == 0)
+						vTaskDelay(((1.0 - value) * 1000 * configTICK_RATE_HZ)/ TimeBase_mS );
+						if(xSemaphoreTake( xSemaphoreData, ( TickType_t ) 100 ) == pdTRUE )
 						{
-							if(xSemaphoreTake( xSemaphoreData, ( TickType_t ) 100 ) == pdTRUE )
-							{
-								dataPacket heaterswitchdata = {"HEATER SWITCHED ON", 600, xPortSysTickCount, 0};
-								xQueueSend(dataQueue, &heaterswitchdata, 100);
-								xSemaphoreGive( xSemaphoreData );
-							}
+							dataPacket heaterswitchdata = {"HEATER ON", 600, xPortSysTickCount, (1.0 - value)};
+							xQueueSend(dataQueue, &heaterswitchdata, 100);
+							xSemaphoreGive( xSemaphoreData );
 						}
-						isOn = 1;
 					}
-					else if(value > 0.20)
+					if(value > 0.01)
 					{
-				        GPIOPinWrite( GPIO_PORTG_BASE, GPIO_PIN_0, 0x00 );
-				        GPIOPinWrite( GPIO_PORTN_BASE, GPIO_PIN_0, 0x00 );
-						vTaskDelay( ( (1.0 - value) * configTICK_RATE_HZ ) / TimeBase_mS );
-						if(isOn == 1)
+						GPIOPinWrite( GPIO_PORTG_BASE, GPIO_PIN_0, 0x00 );
+						GPIOPinWrite( GPIO_PORTN_BASE, GPIO_PIN_0, 0x00 );
+						vTaskDelay( ( value * configTICK_RATE_HZ ) / TimeBase_mS );
+						if(xSemaphoreTake( xSemaphoreData, ( TickType_t ) 100 ) == pdTRUE )
 						{
-							if(xSemaphoreTake( xSemaphoreData, ( TickType_t ) 100 ) == pdTRUE )
-							{
-								dataPacket heaterswitchdata = {"HEATER SWITCHED OFF", 600, xPortSysTickCount, 0};
-								xQueueSend(dataQueue, &heaterswitchdata, 100);
-								xSemaphoreGive( xSemaphoreData );
-							}
+							dataPacket heaterswitchdata = {"HEATER OFF", 600, xPortSysTickCount, value};
+							xQueueSend(dataQueue, &heaterswitchdata, 100);
+							xSemaphoreGive( xSemaphoreData );
 						}
-						isOn = 0;
 					}
-
-
-			        //
-			        // Turn-off HeaterOn_H for 1 - value
-
 
 					if(xSemaphoreTake( xSemaphoreData, ( TickType_t ) 100 ) == pdTRUE )
 					{
